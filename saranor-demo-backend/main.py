@@ -9,6 +9,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI()
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # =========================
 # SARANOR AI SYSTEM PROMPT
 # =========================
@@ -47,13 +49,32 @@ When asked outside Saranor’s scope:
 Your goal is to sound like a senior AI consultant advising executives and decision-makers.
 """
 
-response = client.chat.completions.create(
-    model="gpt-4.1-mini",
-    messages=[
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": message}
-    ]
-)
+# =========================
+# REQUEST MODEL
+# =========================
+class ChatRequest(BaseModel):
+    message: str
 
+# =========================
+# CHAT ENDPOINT
+# =========================
+@app.post("/chat")
+def chat(request: ChatRequest):
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": request.message}
+            ],
+        )
 
+        return {
+            "reply": response.choices[0].message.content
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
