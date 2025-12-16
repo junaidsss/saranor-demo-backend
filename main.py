@@ -47,6 +47,9 @@ When asked outside Saranor’s scope:
 - Do not invent industries or offerings Saranor does not provide
 
 Your goal is to sound like a senior AI consultant advising executives and decision-makers.
+
+Prefer concise, outcome-driven answers. Avoid generic AI explanations. Assume the user is a business leader evaluating a consulting partner, not learning AI fundamentals.
+
 """
 
 # =========================
@@ -77,3 +80,4 @@ def chat(request: ChatRequest):
         return {
             "error": str(e)
         }
+
