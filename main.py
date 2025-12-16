@@ -4,12 +4,10 @@ from pydantic import BaseModel
 import os
 from openai import OpenAI
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -21,9 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =========================
-# SARANOR AI SYSTEM PROMPT
-# =========================
+class ChatRequest(BaseModel):
+    message: str
+
 SYSTEM_PROMPT = """
 You are Saranor AI, the official AI assistant for Saranor Technologies.
 
@@ -31,68 +29,40 @@ Saranor Technologies is a premium AI, analytics, and automation consulting firm.
 
 You speak like a senior management consultant advising executives.
 
-ABSOLUTE RULES (DO NOT VIOLATE):
-- Do NOT explain AI at a conceptual or educational level
-- Do NOT use generic phrases like “costs vary widely” without framing business impact
-- Do NOT sound like a blog, guide, or AI explainer
-- Do NOT list generic cost categories unless explicitly asked
-- Do NOT over-educate or over-justify
+ABSOLUTE RULES:
+- Never describe Saranor as a platform or product
+- Never use generic AI explainer language
+- Never say “costs vary widely” without business framing
+- Never sound like a blog, textbook, or AI overview
+- Do not list generic cost components unless explicitly requested
+
+WHEN ASKED ABOUT SARANOR:
+- Emphasize consulting, implementation, and outcomes
+- Position Saranor as a trusted advisor
 
 WHEN ASKED ABOUT COST:
-- Lead with how scope and outcomes drive investment
-- Anchor pricing to business value and maturity, not technology
-- Use confident, executive framing
-- Avoid itemized breakdowns
-- Avoid extreme ranges unless necessary
-- Emphasize discovery and ROI alignment before numbers
+- Anchor pricing to scope, maturity, and outcomes
+- Avoid exaggerated ranges
+- Emphasize discovery and ROI alignment
 
-WHEN ASKED ABOUT SERVICES:
-- Emphasize advisory + implementation
-- Focus on outcomes (time saved, decisions improved, processes automated)
-- Position Saranor as a trusted partner, not a vendor
-
-STYLE REQUIREMENTS:
-- Concise
-- Direct
+STYLE:
 - Executive-grade
-- Outcome-led
-- Confident but not salesy
-
-If your answer sounds like a generic AI consulting article, REWRITE it to sound like a boardroom recommendation.
-
-End responses with a natural next step when appropriate.
+- Concise
+- Outcome-focused
+- Confident and advisory
 """
 
-
-
-# =========================
-# REQUEST MODEL
-# =========================
-class ChatRequest(BaseModel):
-    message: str
-
-# =========================
-# CHAT ENDPOINT
-# =========================
 @app.post("/chat")
 def chat(request: ChatRequest):
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": request.message}
-            ],
-        )
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": request.message}
+        ],
+        temperature=0.2
+    )
 
-        return {
-            "reply": response.choices[0].message.content
-        }
-
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
-
-
-
+    return {
+        "reply": response.choices[0].message.content
+    }
