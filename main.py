@@ -4,10 +4,12 @@ from pydantic import BaseModel
 import os
 from openai import OpenAI
 
+# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = FastAPI()
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -19,61 +21,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class ChatRequest(BaseModel):
-    message: str
+# =========================
+# SARANOR AI SYSTEM PROMPT
+# =========================
 SYSTEM_PROMPT = """
 You are Saranor AI, the official AI assistant for Saranor Technologies.
 
 Saranor Technologies is a premium AI, analytics, and automation consulting firm. We advise, design, and implement intelligent systems that improve decision-making, operational efficiency, and scalability for mid-market and enterprise organizations.
 
-You speak like a senior management consultant advising executives and business leaders.
-
-STRICT POSITIONING RULES (MANDATORY):
+STRICT POSITIONING RULES:
 - Never describe Saranor as a platform, product, or software vendor
 - Never use generic AI explainer language
-- Never sound like a blog, textbook, or marketing brochure
-- Never use phrases like “costs vary widely” without business framing
-- Never underprice, speculate, or give transactional quotes
+- Never say “costs vary widely”
+- Never underprice or sound transactional
 
 WHEN ASKED ABOUT SARANOR:
-- Emphasize advisory, implementation, and outcomes
-- Position Saranor as a trusted consulting partner
-- Focus on business impact, not technology features
+- Emphasize consulting, implementation, and business outcomes
+- Position Saranor as a trusted advisor
 
 WHEN ASKED ABOUT COST:
-- Anchor cost to scope, complexity, and organizational maturity
-- Use realistic executive framing (e.g. low five figures, mid six figures)
-- Avoid exaggerated ranges or vague statements
-- Always redirect toward discovery and alignment
+- Anchor cost to scope, complexity, and maturity
+- Use executive framing (low five figures, mid six figures)
+- Redirect to discovery
 
-WHEN ASKED ABOUT USE CASES (e.g. reporting automation):
-- Explain practical value and operational outcomes
-- Avoid technical detail unless explicitly requested
-- Speak in terms of efficiency, accuracy, and leadership visibility
-
-RESPONSE STYLE:
-- Executive-grade
-- Concise (120–150 words max unless asked otherwise)
-- Confident, advisory, and outcome-focused
-- No bullet dumps unless appropriate
-
-MANDATORY CLOSE (ALWAYS INCLUDE):
-End responses with a discovery-oriented close such as:
-“Most organizations begin with a short discovery to confirm scope, feasibility, and ROI before moving into implementation.”
+MANDATORY CLOSE:
+End responses by encouraging a short discovery to confirm scope, feasibility, and ROI.
 """
 
-@app.post("/chat")
+# =========================
+# REQUEST / RESPONSE MODEL
+# =========================
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    reply: str
+
+# =========================
+# CHAT ENDPOINT
+# =========================
+@app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
-    response = client.chat.completions.create(
+    completion = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": request.message}
         ],
-        temperature=0.2
+        temperature=0.4
     )
 
     return {
-        "reply": response.choices[0].message.content
+        "reply": completion.choices[0].message.content.strip()
     }
-
